@@ -57,8 +57,11 @@ export function Footer() {
             <p className="text-muted-foreground mb-2 max-w-md">
               Madnepur, Kuthond, District-Jalaun
             </p>
-            <p className="text-muted-foreground mb-6 max-w-md">
+            <p className="text-muted-foreground mb-2 max-w-md">
               Phone: 6263051362
+            </p>
+            <p className="text-muted-foreground mb-6 max-w-md">
+              Phone: 7007620370
             </p>
             <div className="flex space-x-4">
               {socialLinks.map(({ icon: Icon, href, label }) => (

@@ -53,7 +53,7 @@ const leadership = [
 ];
 
 const milestones = [
-  { year: "1950", event: "University Founded" },
+  { year: "2012", event: "University Founded" },
   { year: "1975", event: "First Graduate Program" },
   { year: "1990", event: "Research Center Established" },
   { year: "2005", event: "International Partnerships" },
@@ -107,7 +107,7 @@ export default function About() {
             className="text-xl sm:text-2xl text-muted-foreground max-w-3xl mx-auto"
           >
             A legacy of excellence in education, innovation, and student success
-            spanning over seven decades.
+            since 2012.
           </motion.p>
         </motion.div>
       </section>
@@ -127,10 +127,10 @@ export default function About() {
                 Our History
               </h2>
               <p className="text-lg text-muted-foreground mb-6">
-                Founded in 1950, our university has been a beacon of academic
-                excellence and innovation for over seven decades. We began as a
+                Founded in 2012, our college has been a beacon of academic
+                excellence and innovation. We began as a
                 small liberal arts college and have grown into a comprehensive
-                university offering programs across multiple disciplines.
+                institution offering programs across multiple disciplines.
               </p>
               <p className="text-lg text-muted-foreground mb-6">
                 Throughout our history, we've remained committed to our core

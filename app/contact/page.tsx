@@ -46,6 +46,13 @@ const contactInfo = [
     href: "tel:+916263051362",
   },
   {
+    icon: Phone,
+    title: "Phone",
+    description: "Call our main office",
+    value: "7007620370",
+    href: "tel:+917007620370",
+  },
+  {
     icon: MapPin,
     title: "Campus Location",
     description: "Visit our campus",

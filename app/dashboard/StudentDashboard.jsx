@@ -38,16 +38,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 
 // Course options
 const COURSES = [
-  "Computer Science",
-  "Business Administration",
-  "Engineering",
-  "Medicine",
-  "Law",
-  "Arts",
-  "Science",
-  "Education",
-  "Nursing",
-  "Pharmacy",
+  "B.ed",
+  "D.eled",
+  "BA",
+  "BSC",
 ];
 
 // Batch years

@@ -27,6 +27,7 @@ import {
   Shield,
   DollarSign,
   FileDown,
+  Printer,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
@@ -57,6 +58,7 @@ export default function StudentDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDocumentModalOpen, setIsDocumentModalOpen] = useState(false);
   const [isFeesModalOpen, setIsFeesModalOpen] = useState(false);
+  const [isPrintSlipModalOpen, setIsPrintSlipModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [feesData, setFeesData] = useState({
@@ -67,6 +69,16 @@ export default function StudentDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterBatch, setFilterBatch] = useState("");
   const [filterCourse, setFilterCourse] = useState("");
+  const [printSlipSearchTerm, setPrintSlipSearchTerm] = useState("");
+  const [printSlipData, setPrintSlipData] = useState({
+    name: "",
+    rollNo: "",
+    contactNo: "",
+    batchYear: "",
+    course: "",
+    feesPaid: "",
+    feesLeft: "",
+  });
   const [notification, setNotification] = useState({ type: null, message: "" });
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [formData, setFormData] = useState({
@@ -304,6 +316,224 @@ export default function StudentDashboard() {
     const total = parseFloat(totalAmount) || 0;
     const paid = parseFloat(amountPaid) || 0;
     return Math.max(0, total - paid);
+  };
+
+  const handlePrintSlipInputChange = (e) => {
+    const { name, value } = e.target;
+    setPrintSlipData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSelectStudentForSlip = (student) => {
+    setPrintSlipData({
+      name: student.name || "",
+      rollNo: student.rollNo || "",
+      contactNo: student.contactNo || "",
+      batchYear: student.batchYear || "",
+      course: student.course || "",
+      feesPaid: String(student.amountPaid ?? 0),
+      feesLeft: String(calculateAmountLeft(student.totalAmount, student.amountPaid)),
+    });
+    setPrintSlipSearchTerm(student.name || student.rollNo || "");
+  };
+
+  const escapeHtml = (value) =>
+    String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
+  const buildCopySection = (copyTitle) => `
+    <section class="copy-section">
+      <div class="slip-header">
+        <p class="college-name">Shri Ramsewak Saxena Memorial Mahavidalaya</p>
+        <p class="college-affiliation">Affiliated to Bundelkhand University</p>
+        <h2>FEES SLIP</h2>
+        <p class="copy-title">${copyTitle}</p>
+      </div>
+      <div class="details-grid">
+        <div class="field"><span>Name:</span><strong>${escapeHtml(printSlipData.name)}</strong></div>
+        <div class="field"><span>Roll No./Student ID:</span><strong>${escapeHtml(printSlipData.rollNo)}</strong></div>
+        <div class="field"><span>Contact No.:</span><strong>${escapeHtml(printSlipData.contactNo)}</strong></div>
+        <div class="field"><span>Batch Year:</span><strong>${escapeHtml(printSlipData.batchYear)}</strong></div>
+        <div class="field"><span>Course:</span><strong>${escapeHtml(printSlipData.course)}</strong></div>
+      </div>
+      <div class="fees-row">
+        <div class="fee-box"><span>Fees Paid</span><strong>₹ ${escapeHtml(printSlipData.feesPaid || "0")}</strong></div>
+        <div class="fee-box"><span>Fees Left</span><strong>₹ ${escapeHtml(printSlipData.feesLeft || "0")}</strong></div>
+      </div>
+      <div class="meta-row">
+        <span>Date: ${new Date().toLocaleDateString("en-IN")}</span>
+      </div>
+      <div class="signatures">
+        <div class="signature-line">Student Signature</div>
+        <div class="signature-line">Authorized Signature</div>
+      </div>
+    </section>
+  `;
+
+  const handleGenerateFeesSlip = (e) => {
+    e.preventDefault();
+    if (!printSlipData.rollNo || !printSlipData.name) {
+      showNotification("error", "Please select a student and fill required details");
+      return;
+    }
+
+    const printWindow = window.open("", "_blank", "width=900,height=1200");
+    if (!printWindow) {
+      showNotification("error", "Pop-up blocked. Please allow pop-ups and try again.");
+      return;
+    }
+
+    const content = `
+      <!doctype html>
+      <html>
+        <head>
+          <meta charset="UTF-8" />
+          <title>Fees Slip - ${escapeHtml(printSlipData.rollNo)}</title>
+          <style>
+            @page { size: A4; margin: 12mm; }
+            body {
+              font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+              margin: 0;
+              padding: 0;
+              color: #1a1a1a;
+              background: #fff;
+            }
+            .page {
+              width: 100%;
+              display: flex;
+              flex-direction: column;
+              gap: 8mm;
+            }
+            .copy-section {
+              border: 2px solid #1e3a8a;
+              border-radius: 10px;
+              padding: 14px;
+              background: linear-gradient(to bottom, #f8fbff 0%, #ffffff 35%);
+              box-shadow: 0 2px 8px rgba(30, 58, 138, 0.08);
+              page-break-inside: avoid;
+            }
+            .slip-header {
+              border-bottom: 1px solid #c7d2fe;
+              margin-bottom: 10px;
+              padding-bottom: 8px;
+              text-align: center;
+            }
+            .college-name {
+              margin: 0 0 2px;
+              font-size: 19px;
+              font-weight: 800;
+              color: #1e3a8a;
+              letter-spacing: 0.3px;
+            }
+            .college-affiliation {
+              margin: 0 0 8px;
+              font-size: 12px;
+              color: #374151;
+              font-style: italic;
+            }
+            h2 {
+              text-align: center;
+              margin: 0 0 4px;
+              font-size: 20px;
+              letter-spacing: 1px;
+              color: #111827;
+            }
+            .copy-title {
+              text-align: center;
+              font-weight: 700;
+              margin: 0;
+              font-size: 12px;
+              letter-spacing: 0.9px;
+              color: #1e40af;
+            }
+            .details-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 9px 16px;
+              margin-bottom: 12px;
+            }
+            .field {
+              font-size: 12.8px;
+              line-height: 1.5;
+              border: 1px solid #e5e7eb;
+              border-radius: 7px;
+              padding: 7px 9px;
+              background: #fff;
+            }
+            .field span {
+              display: inline-block;
+              min-width: 120px;
+              color: #4b5563;
+              font-weight: 600;
+            }
+            .fees-row {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 10px;
+              margin-bottom: 10px;
+            }
+            .fee-box {
+              border: 1.5px solid #1d4ed8;
+              border-radius: 8px;
+              padding: 9px 10px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              font-size: 14px;
+              background: #eff6ff;
+            }
+            .fee-box span {
+              color: #1e3a8a;
+              font-weight: 600;
+            }
+            .meta-row {
+              font-size: 12px;
+              margin-bottom: 18px;
+              color: #4b5563;
+              font-weight: 600;
+            }
+            .signatures {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 30px;
+              margin-top: 16px;
+            }
+            .signature-line {
+              border-top: 1px dashed #1f2937;
+              padding-top: 6px;
+              font-size: 12px;
+              text-align: center;
+              color: #374151;
+            }
+            @media print {
+              .copy-section {
+                box-shadow: none;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <main class="page">
+            ${buildCopySection("STUDENT COPY")}
+            ${buildCopySection("COLLEGE COPY")}
+          </main>
+          <script>
+            window.onload = function () {
+              window.print();
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.open();
+    printWindow.document.write(content);
+    printWindow.document.close();
+    setIsPrintSlipModalOpen(false);
+    showNotification("success", "Fees slip generated. Use Save as PDF in print dialog.");
   };
 
   // Handle CSV download
@@ -604,6 +834,16 @@ export default function StudentDashboard() {
                   <span className="hidden sm:inline">Download CSV</span>
                   <span className="sm:hidden">CSV</span>
                 </Button>
+                {canEdit && (
+                  <Button
+                    onClick={() => setIsPrintSlipModalOpen(true)}
+                    variant="outline"
+                    className="border-blue-600 text-blue-600 hover:bg-blue-50 h-10 sm:h-11 text-sm flex-1 sm:flex-initial"
+                  >
+                    <Printer className="h-4 w-4 sm:mr-2" />
+                    <span>Print Fees Slip</span>
+                  </Button>
+                )}
                 {canEdit && (
                   <Button
                     onClick={() => {
@@ -1204,6 +1444,136 @@ export default function StudentDashboard() {
               </Button>
               <Button type="submit" className="bg-gradient-to-r from-blue-600 to-purple-600">
                 Update Fees
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Print Fees Slip Modal */}
+      <Dialog open={isPrintSlipModalOpen} onOpenChange={setIsPrintSlipModalOpen}>
+        <DialogContent className="w-[95vw] sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Print Fees Slip</DialogTitle>
+            <DialogDescription>
+              Select student by name or student ID, then generate A4 fees slip.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleGenerateFeesSlip} className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Search Student (Name / Student ID)</label>
+              <Input
+                type="text"
+                value={printSlipSearchTerm}
+                onChange={(e) => setPrintSlipSearchTerm(e.target.value)}
+                placeholder="Type student name or roll no."
+              />
+              {printSlipSearchTerm.trim() && (
+                <div className="mt-2 max-h-40 overflow-y-auto border rounded-lg bg-white">
+                  {students
+                    .filter((student) => {
+                      const keyword = printSlipSearchTerm.toLowerCase();
+                      return (
+                        student.name?.toLowerCase().includes(keyword) ||
+                        student.rollNo?.toLowerCase().includes(keyword)
+                      );
+                    })
+                    .slice(0, 8)
+                    .map((student) => (
+                      <button
+                        key={student.id}
+                        type="button"
+                        className="w-full text-left px-3 py-2 hover:bg-blue-50 border-b last:border-b-0"
+                        onClick={() => handleSelectStudentForSlip(student)}
+                      >
+                        <div className="font-medium text-sm">{student.name || "-"}</div>
+                        <div className="text-xs text-gray-600">{student.rollNo}</div>
+                      </button>
+                    ))}
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Name *</label>
+                <Input
+                  name="name"
+                  value={printSlipData.name}
+                  onChange={handlePrintSlipInputChange}
+                  placeholder="Enter student name"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Roll No./Student ID *</label>
+                <Input
+                  name="rollNo"
+                  value={printSlipData.rollNo}
+                  onChange={handlePrintSlipInputChange}
+                  placeholder="Enter roll no."
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Contact No.</label>
+                <Input
+                  name="contactNo"
+                  value={printSlipData.contactNo}
+                  onChange={handlePrintSlipInputChange}
+                  placeholder="Enter contact no."
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Batch Year</label>
+                <Input
+                  name="batchYear"
+                  value={printSlipData.batchYear}
+                  onChange={handlePrintSlipInputChange}
+                  placeholder="Enter batch year"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Course</label>
+                <Input
+                  name="course"
+                  value={printSlipData.course}
+                  onChange={handlePrintSlipInputChange}
+                  placeholder="Enter course"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Fees Paid (₹)</label>
+                <Input
+                  name="feesPaid"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={printSlipData.feesPaid}
+                  onChange={handlePrintSlipInputChange}
+                  placeholder="Enter fees paid"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Fees Left (₹)</label>
+                <Input
+                  name="feesLeft"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={printSlipData.feesLeft}
+                  onChange={handlePrintSlipInputChange}
+                  placeholder="Enter fees left"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 justify-end pt-2">
+              <Button type="button" variant="outline" onClick={() => setIsPrintSlipModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-gradient-to-r from-blue-600 to-purple-600">
+                Generate
               </Button>
             </div>
           </form>
